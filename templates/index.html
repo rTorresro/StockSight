@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Prediction Platform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            width: 200px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            display: none;
+        }
+        .error {
+            color: red;
+            margin-top: 20px;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Stock Prediction Platform</h1>
+        <p style="text-align: center; color: #666;">
+            Enter a stock symbol to see current price and prediction
+        </p>
+        
+        <div class="input-group" style="text-align: center;">
+            <input type="text" id="symbolInput" placeholder="e.g., AAPL" maxlength="10">
+            <button onclick="fetchStock()">Get Stock Data</button>
+        </div>
+        
+        <div id="loading" class="loading" style="display: none; text-align: center;">
+            Loading...
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="result" class="result">
+            <h2 id="symbolDisplay"></h2>
+            <p><strong>Current Price:</strong> $<span id="currentPrice"></span></p>
+            <p><strong>24h Change:</strong> <span id="change"></span> (<span id="changePercent"></span>%)</p>
+            <p><strong>Predicted Price:</strong> $<span id="prediction"></span></p>
+        </div>
+    </div>
+
+    <script>
+        // Function to fetch stock data from the API
+        function fetchStock() {
+            const symbol = document.getElementById('symbolInput').value.toUpperCase();
+            if (!symbol) {
+                alert('Please enter a stock symbol');
+                return;
+            }
+            
+            // Show loading message, hide results and errors
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            
+            // Make API request to Flask backend
+            fetch(`/api/stock/${symbol}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    
+                    // Check if there's an error
+                    if (data.error) {
+                        document.getElementById('error').textContent = data.error;
+                        document.getElementById('error').style.display = 'block';
+                        return;
+                    }
+                    
+                    // Display the results
+                    document.getElementById('symbolDisplay').textContent = data.symbol;
+                    document.getElementById('currentPrice').textContent = data.current_price.toFixed(2);
+                    
+                    const changeElement = document.getElementById('change');
+                    const changePercentElement = document.getElementById('changePercent');
+                    changeElement.textContent = (data.change >= 0 ? '+' : '') + data.change.toFixed(2);
+                    changePercentElement.textContent = (data.change_percent >= 0 ? '+' : '') + data.change_percent.toFixed(2);
+                    
+                    // Color code positive/negative changes
+                    if (data.change >= 0) {
+                        changeElement.style.color = 'green';
+                        changePercentElement.style.color = 'green';
+                    } else {
+                        changeElement.style.color = 'red';
+                        changePercentElement.style.color = 'red';
+                    }
+                    
+                    document.getElementById('prediction').textContent = data.prediction.toFixed(2);
+                    document.getElementById('result').style.display = 'block';
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('error').textContent = 'Failed to fetch data: ' + error.message;
+                    document.getElementById('error').style.display = 'block';
+                });
+        }
+        
+        // Allow pressing Enter to submit
+        document.getElementById('symbolInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                fetchStock();
+            }
+        });
+    </script>
+</body>
+</html>
+
