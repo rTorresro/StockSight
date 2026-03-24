@@ -1,7 +1,5 @@
-requests
 pandas
 numpy
 scikit-learn
 flask
-python-dotenv 
-
+yfinance
